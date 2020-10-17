@@ -20,10 +20,10 @@ $pizzaSummary = array();
 $pizzaSummary["Total"] = array(
     "partyStartTime" => "Total",
     "PB Glutenfri Skinke" => 0,
-    "PB Glutenfri Kjøttboller" => 0,
+    "PB Glutenfri Kjottboller" => 0,
     "PB Glutenfri Pepperoni" => 0,
     "PB Glutenfri Margherita" => 0,
-    "PB Pizza Kjøttboller" => 0,
+    "PB Pizza Kjottboller" => 0,
     "PB Pizza Margherita" => 0,
     "PB Pizza Pepperoni" => 0,
     "PB Pizza Skinke" => 0,
@@ -69,10 +69,10 @@ foreach ($lines as $line) {
                 "parentName" => $parentName,
                 "partyId" => $partyId,
                 "PB Glutenfri Skinke" => 0,
-                "PB Glutenfri Kjøttboller" => 0,
+                "PB Glutenfri Kjottboller" => 0,
                 "PB Glutenfri Pepperoni" => 0,
                 "PB Glutenfri Margherita" => 0,
-                "PB Pizza Kjøttboller" => 0,
+                "PB Pizza Kjottboller" => 0,
                 "PB Pizza Margherita" => 0,
                 "PB Pizza Pepperoni" => 0,
                 "PB Pizza Skinke" => 0,
@@ -99,10 +99,10 @@ foreach ($lines as $line) {
                 "parentName" => $parentName,
                 "partyId" => $partyId,
                 "PB Glutenfri Skinke" => 0,
-                "PB Glutenfri Kjøttboller" => 0,
+                "PB Glutenfri Kjottboller" => 0,
                 "PB Glutenfri Pepperoni" => 0,
                 "PB Glutenfri Margherita" => 0,
-                "PB Pizza Kjøttboller" => 0,
+                "PB Pizza Kjottboller" => 0,
                 "PB Pizza Margherita" => 0,
                 "PB Pizza Pepperoni" => 0,
                 "PB Pizza Skinke" => 0,
@@ -186,7 +186,7 @@ usort($pizzaSummary, "my_sort");
                     <table class="table table-striped table-bordered table-hover table-sm">
                         <thead>
                             <tr class="text-center">
-                                <th scope="col">Start Tid</th>
+                                <th>Start Tid</th>
                                 <th scope="col">Party ID</th>
                                 <th scope="col">Party Name</th>
                                 <th scope="col">Skinke</th>
@@ -209,16 +209,16 @@ usort($pizzaSummary, "my_sort");
                                     echo "<td>" . $party["partyId"] . "</td>";
                                     echo "<td class=\"text-left\">" . $party["parentName"] . "</td>";
                                     echo "<td>" . ($party["PB Pizza Skinke"] == 0 ? "-" : $party["PB Pizza Skinke"]) . "</td>";
-                                    echo "<td>" . ($party["PB Pizza Kjøttboller"] == 0 ? "-" : $party["PB Pizza Kjøttboller"]) . "</td>";
+                                    echo "<td>" . ($party["PB Pizza Kjottboller"] == 0 ? "-" : $party["PB Pizza Kjottboller"]) . "</td>";
                                     echo "<td>" . ($party["PB Pizza Pepperoni"] == 0 ? "-" : $party["PB Pizza Pepperoni"]) . "</td>";
                                     echo "<td>" . ($party["PB Pizza Margherita"] == 0 ? "-" : $party["PB Pizza Margherita"]) . "</td>";
                                     echo "<td>" . ($party["PB Glutenfri Skinke"] == 0 ? "-" : $party["PB Glutenfri Skinke"]) . "</td>";
-                                    echo "<td>" . ($party["PB Glutenfri Kjøttboller"] == 0 ? "-" : $party["PB Glutenfri Kjøttboller"]) . "</td>";
+                                    echo "<td>" . ($party["PB Glutenfri Kjottboller"] == 0 ? "-" : $party["PB Glutenfri Kjottboller"]) . "</td>";
                                     echo "<td>" . ($party["PB Glutenfri Pepperoni"] == 0 ? "-" : $party["PB Glutenfri Pepperoni"]) . "</td>";
                                     echo "<td>" . ($party["PB Glutenfri Margherita"] == 0 ? "-" : $party["PB Glutenfri Margherita"]) . "</td>";
                                     echo "<td>" . ($party["[X] PB Meny"] == 0 ? "-" : $party["[X] PB Meny"]) . "</td>";
-                                    echo "<td>" . ($party["total"] == 0 ? "-" : $party["total"]) . "</td></tr>";
-                                    echo "<td>" . ($party["notes"] == null ? "-" : $party["notes"]) . "</td>";
+                                    echo "<td>" . ($party["total"] == 0 ? "-" : $party["total"]) . "</td>";
+                                    echo "<td>" . ($party["notes"] == null ? "-" : $party["notes"]) . "</td></tr>";
                                 }
                             ?>
                         </tbody>
@@ -267,11 +267,11 @@ usort($pizzaSummary, "my_sort");
                                     }
                                     echo "<tr class=\"text-center\">" . $index . "<th scope=\"row\">" . $pizzas["partyStartTime"] . "</th>";
                                     echo "<td>" . ($pizzas["PB Pizza Skinke"] == 0 ? "-" : $pizzas["PB Pizza Skinke"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Pizza Kjøttboller"] == 0 ? "-" : $pizzas["PB Pizza Kjøttboller"]) . "</td>";
+                                    echo "<td>" . ($pizzas["PB Pizza Kjottboller"] == 0 ? "-" : $pizzas["PB Pizza Kjottboller"]) . "</td>";
                                     echo "<td>" . ($pizzas["PB Pizza Pepperoni"] == 0 ? "-" : $pizzas["PB Pizza Pepperoni"]) . "</td>";
                                     echo "<td>" . ($pizzas["PB Pizza Margherita"] == 0 ? "-" : $pizzas["PB Pizza Margherita"]) . "</td>";
                                     echo "<td>" . ($pizzas["PB Glutenfri Skinke"] == 0 ? "-" : $pizzas["PB Glutenfri Skinke"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Glutenfri Kjøttboller"] == 0 ? "-" : $pizzas["PB Glutenfri Kjøttboller"]) . "</td>";
+                                    echo "<td>" . ($pizzas["PB Glutenfri Kjottboller"] == 0 ? "-" : $pizzas["PB Glutenfri Kjottboller"]) . "</td>";
                                     echo "<td>" . ($pizzas["PB Glutenfri Pepperoni"] == 0 ? "-" : $pizzas["PB Glutenfri Pepperoni"]) ."</td>";
                                     echo "<td>" . ($pizzas["PB Glutenfri Margherita"] == 0 ? "-" : $pizzas["PB Glutenfri Margherita"]) . "</td>";
                                     echo "<td>" . ($pizzas["[X] PB Meny"] == 0 ? "-" : $pizzas["[X] PB Meny"]) . "</td>";
