@@ -12,7 +12,7 @@ $tomorrowDate = date_create_from_format("Y-m-d H:i:s.u", $tomorrowDate);
 $yesterdayDate = date('Y-m-d H:i:s.u',strtotime('-1 day',strtotime($setDate->format("Y-m-d H:i:s.u"))));
 $yesterdayDate = date_create_from_format("Y-m-d H:i:s.u", $yesterdayDate);
 
-$lines = gzfile('https://altitude-ce-aws.s3.eu-central-1.amazonaws.com/Pizza_Sheet/AltitudeNorwayPizzaSheetAWS.csv.gz');
+$lines = gzfile('https://altitude-ce-aws.s3.eu-central-1.amazonaws.com/Pizza_Sheet/PB_Pizza_Delivery_List.csv');
 
 $partyData = array();
 $pizzaSummary = array();
@@ -27,6 +27,7 @@ $pizzaSummary["Total"] = array(
     "PB Pizza Margherita" => 0,
     "PB Pizza Pepperoni" => 0,
     "PB Pizza Skinke" => 0,
+    "[X] PB Meny" => 0,
     "total" => 0
 );
 
@@ -41,22 +42,26 @@ foreach ($lines as $line) {
     if(empty(trim($line))) {
         continue;
     }
-    list($partyId, $eventStatus, $parentName, $partyStartTime, $partyEndTime, $foodDeliveryTime, $pizzaType, $numberOfPizzas) = explode(",", $line);
-    $partyStartTime = explode("+", $partyStartTime)[0];
-    $foodDeliveryTime = explode("+", $foodDeliveryTime)[0];
+    
+    list($partyId, $parentName, $partyStartTimeString, $partyEndTime, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode(";", $line);
+    $partyId = str_replace("\"","", $partyId);
+    $parentName = str_replace("\"","", $parentName);
+    $partyStartTimeString = str_replace("\"","", $partyStartTimeString);
+    $partyEndTime = str_replace("\"","", $partyEndTime);
+    $foodDeliveryTimeString = str_replace("\"","", $foodDeliveryTimeString);
+    $pizzaType = str_replace("\"","", $pizzaType);
+    $numberOfPizzas = str_replace("\"","", $numberOfPizzas);
+    $notes = str_replace("\"","", $notes);
+
     if($pizzaType == "Pølse" || $pizzaType == "Kylling og kalkun pølse" || $pizzaType == "Bursdagsis" || $pizzaType == "Bursdagsbrus" || $pizzaType == "Bursdags Slush") {
         continue;
     }
-    $partyStartTime = date_create_from_format("Y-m-d H:i:s.u", date('Y-m-d H:i:s.u', strtotime($partyStartTime)));
-    if(strtolower($foodDeliveryTime) == "null") {
-        $foodDeliveryTime = date('Y-m-d H:i:s.u',strtotime('+30 minutes',strtotime($partyStartTime->format("Y-m-d H:i:s.u"))));
-        $foodDeliveryTime = date_create_from_format("Y-m-d H:i:s.u", $foodDeliveryTime);
-    }
-    else {
-        $foodDeliveryTime = date_create_from_format("Y-m-d H:i:s.u", date('Y-m-d H:i:s.u', strtotime($foodDeliveryTime)));
-    }
 
-    if($foodDeliveryTime->format("Y-m-d") == $setDate->format("Y-m-d") && $eventStatus == "Active") {
+    $date = explode(",", $partyEndTime)[0];
+    $partyStartTime = date_create_from_format("d.m.Y H:i", $date . ' ' . $partyStartTimeString);
+    $foodDeliveryTime = date_create_from_format("d.m.Y H:i", $date . ' ' . $foodDeliveryTimeString);
+
+    if($foodDeliveryTime->format("Y-m-d") == $setDate->format("Y-m-d")) {
         $time = $foodDeliveryTime->format("H:i");
         if(!array_key_exists($time, $pizzaSummary)) {
             $pizzaSummary[$time] = array(
@@ -71,16 +76,19 @@ foreach ($lines as $line) {
                 "PB Pizza Margherita" => 0,
                 "PB Pizza Pepperoni" => 0,
                 "PB Pizza Skinke" => 0,
+                "[X] PB Meny" => 0,
+                "notes" => $notes,
                 "total" => 0
             );
         }
+        
         $pizzaSummary[$time][$pizzaType] = $pizzaSummary[$time][$pizzaType] + intval($numberOfPizzas);
         $pizzaSummary[$time]["total"] = $pizzaSummary[$time]["total"] + intval($numberOfPizzas);
         $pizzaSummary["Total"][$pizzaType] = $pizzaSummary["Total"][$pizzaType] + intval($numberOfPizzas);
         $pizzaSummary["Total"]["total"] = $pizzaSummary["Total"]["total"] + intval($numberOfPizzas);
     }
 
-    if($partyStartTime->format("Y-m-d") == $setDate->format("Y-m-d") && $eventStatus == "Active") {
+    if($partyStartTime->format("Y-m-d") == $setDate->format("Y-m-d")) {
         if(array_key_exists($partyId, $partyData)) {
             $partyData[$partyId][$pizzaType] = $partyData[$partyId][$pizzaType] + intval($numberOfPizzas);
             $partyData[$partyId]["total"] = $partyData[$partyId]["total"] + intval($numberOfPizzas);
@@ -98,6 +106,8 @@ foreach ($lines as $line) {
                 "PB Pizza Margherita" => 0,
                 "PB Pizza Pepperoni" => 0,
                 "PB Pizza Skinke" => 0,
+                "[X] PB Meny" => 0,
+                "notes" => $notes,
                 "total" => 0
             );
             $partyData[$partyId][$pizzaType] = $partyData[$partyId][$pizzaType] + intval($numberOfPizzas);
@@ -119,7 +129,7 @@ usort($pizzaSummary, "my_sort");
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -127,7 +137,7 @@ usort($pizzaSummary, "my_sort");
         <title>Pizza Orders</title>
         <link rel="shortcut icon" type="image/png" href="altitude.png"/>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
         <link rel="stylesheet" href="bootstrap-datetimepicker.min.css">
         <script src="https://kit.fontawesome.com/a6bde2c958.js" crossorigin="anonymous"></script>
         <style>
@@ -187,7 +197,9 @@ usort($pizzaSummary, "my_sort");
                                 <th scope="col">GF Kjøttboller</th>
                                 <th scope="col">GF Pepperoni</th>
                                 <th scope="col">GF Margherita</th>
+                                <th scope="col">PB Meny</th>
                                 <th scope="col">Total</th>
+                                <th scope="col">Notes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -204,7 +216,9 @@ usort($pizzaSummary, "my_sort");
                                     echo "<td>" . ($party["PB Glutenfri Kjøttboller"] == 0 ? "-" : $party["PB Glutenfri Kjøttboller"]) . "</td>";
                                     echo "<td>" . ($party["PB Glutenfri Pepperoni"] == 0 ? "-" : $party["PB Glutenfri Pepperoni"]) . "</td>";
                                     echo "<td>" . ($party["PB Glutenfri Margherita"] == 0 ? "-" : $party["PB Glutenfri Margherita"]) . "</td>";
+                                    echo "<td>" . ($party["[X] PB Meny"] == 0 ? "-" : $party["[X] PB Meny"]) . "</td>";
                                     echo "<td>" . ($party["total"] == 0 ? "-" : $party["total"]) . "</td></tr>";
+                                    echo "<td>" . ($party["notes"] == null ? "-" : $party["notes"]) . "</td>";
                                 }
                             ?>
                         </tbody>
@@ -236,6 +250,7 @@ usort($pizzaSummary, "my_sort");
                                 <th scope="col">GF Kjøttboller</th>
                                 <th scope="col">GF Pepperoni</th>
                                 <th scope="col">GF Margherita</th>
+                                <th scope="col">PB Meny</th>
                                 <th scope="col">Total</th>
                             </tr>
                         </thead>
@@ -259,6 +274,7 @@ usort($pizzaSummary, "my_sort");
                                     echo "<td>" . ($pizzas["PB Glutenfri Kjøttboller"] == 0 ? "-" : $pizzas["PB Glutenfri Kjøttboller"]) . "</td>";
                                     echo "<td>" . ($pizzas["PB Glutenfri Pepperoni"] == 0 ? "-" : $pizzas["PB Glutenfri Pepperoni"]) ."</td>";
                                     echo "<td>" . ($pizzas["PB Glutenfri Margherita"] == 0 ? "-" : $pizzas["PB Glutenfri Margherita"]) . "</td>";
+                                    echo "<td>" . ($pizzas["[X] PB Meny"] == 0 ? "-" : $pizzas["[X] PB Meny"]) . "</td>";
                                     echo "<td>" . ($pizzas["total"] == 0 ? "-" : $pizzas["total"]) . "</td></tr>";
                                 }
                             ?>
@@ -274,11 +290,9 @@ usort($pizzaSummary, "my_sort");
             </footer>
         </div>
 
-        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js" integrity="sha256-4iQZ6BVL4qNKlQ27TExEhBN1HFPvAvAMbFavKKosSWQ=" crossorigin="anonymous"></script>
-        <script src="bootstrap-datetimepicker.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.5.3/umd/popper.min.js" integrity="sha512-53CQcu9ciJDlqhK7UD8dZZ+TF2PFGZrOngEYM/8qucuQba+a+BXOIRsp9PoMNJI3ZeLMVNIxIfZLbG/CdHI5PA==" crossorigin="anonymous"></script>        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>        <script src="bootstrap-datetimepicker.min.js"></script>
         <script type="text/javascript">
             $(function() {
                 $('#datetimepicker1').datetimepicker({

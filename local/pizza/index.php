@@ -12,7 +12,7 @@ $tomorrowDate = date_create_from_format("Y-m-d H:i:s.u", $tomorrowDate);
 $yesterdayDate = date('Y-m-d H:i:s.u',strtotime('-1 day',strtotime($setDate->format("Y-m-d H:i:s.u"))));
 $yesterdayDate = date_create_from_format("Y-m-d H:i:s.u", $yesterdayDate);
 
-$myfile = fopen("PizzaSheet.csv", "r") or die("Unable to open file!");
+$myfile = fopen("PB_Pizza_Delivery_List.csv", "r") or die("Unable to open file!");
 
 $partyData = array();
 $pizzaSummary = array();
@@ -37,7 +37,7 @@ while(!feof($myfile)) {
         continue;
     }
 
-    list($partyId, $eventStatus, $parentName, $partyStartTime, $partyEndTime, $foodDeliveryTime, $pizzaType, $numberOfPizzas) = explode(",", $line);
+    list($partyId, $parentName, $partyStartTime, $partyEndTime, $foodDeliveryTime, $pizzaType, $numberOfPizzas) = explode(",", $line);
     $partyStartTime = explode("+", $partyStartTime)[0];
     $foodDeliveryTime = explode("+", $foodDeliveryTime)[0];
     if($pizzaType == "Pølse" || $pizzaType == "Kylling og kalkun pølse" || $pizzaType == "Bursdagsis" || $pizzaType == "Bursdagsbrus" || $pizzaType == "Bursdags Slush") {
@@ -52,7 +52,7 @@ while(!feof($myfile)) {
         $foodDeliveryTime = date_create_from_format("Y-m-d H:i:s.u", date('Y-m-d H:i:s.u', strtotime($foodDeliveryTime)));
     }
 
-    if($partyStartTime->format("Y-m-d") == $setDate->format("Y-m-d") && $eventStatus == "Active") {
+    if($partyStartTime->format("Y-m-d") == $setDate->format("Y-m-d")) {
         $time = $foodDeliveryTime->format("H:i");
         if(!array_key_exists($time, $pizzaSummary)) {
             $pizzaSummary[$time] = array(
