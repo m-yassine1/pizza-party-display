@@ -31,11 +31,8 @@ $pizzaSummary["Total"] = array(
     "total" => 0
 );
 
-// Remove the first line
-$firstLine = true;
 foreach ($lines as $line) {
-    if($firstLine){
-        $firstLine = false;
+    if(preg_match("/^"BKN.*$/i", line) != 1) {
         continue;
     }
 
