@@ -32,7 +32,7 @@ $pizzaSummary["Total"] = array(
 );
 
 foreach ($lines as $line) {
-    if(preg_match("/^"BKN.*$/i", line) != 1) {
+    if(preg_match('/^"BKN.*$/i', $line) != 1) {
         continue;
     }
 
