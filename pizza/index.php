@@ -42,15 +42,15 @@ foreach ($lines as $line) {
     
     list($partyId, $parentName, $partyStartTimeString, $partyEndDate, $partyEndTime, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode(",", $line);
 
-    $partyEndDate = str_replace("\"","", $partyEndDate); 
-    $partyId = str_replace("\"","", $partyId);
-    $parentName = str_replace("\"","", $parentName);
-    $partyStartTimeString = str_replace("\"","", $partyStartTimeString);
-    $partyEndTime = str_replace("\"","", $partyEndTime);
-    $foodDeliveryTimeString = str_replace("\"","", $foodDeliveryTimeString);
-    $pizzaType = str_replace("\"","", $pizzaType);
-    $numberOfPizzas = str_replace("\"","", $numberOfPizzas);
-    $notes = str_replace("\"","", $notes);
+    $partyEndDate = str_replace("\"", "", $partyEndDate); 
+    $partyId = str_replace("\"", "", $partyId);
+    $parentName = str_replace("\"", "", $parentName);
+    $partyStartTimeString = str_replace("\"", "", $partyStartTimeString);
+    $partyEndTime = str_replace("\"", "", $partyEndTime);
+    $foodDeliveryTimeString = str_replace("\"", "", $foodDeliveryTimeString);
+    $pizzaType = str_replace("\"", "", $pizzaType);
+    $numberOfPizzas = str_replace("−", "-", str_replace("\"", "", $numberOfPizzas));
+    $notes = str_replace("\"", "", $notes);
 
     if($pizzaType == "Pølse" || $pizzaType == "Kylling og kalkun pølse" || $pizzaType == "Bursdagsis" || $pizzaType == "Bursdagsbrus" || $pizzaType == "Bursdags Slush") {
         continue;
