@@ -1,36 +1,24 @@
 <?php
+require "models.php";
+
 $setDate = date_create();
 
-//Must read as 2013-03-15
+//Date format should be 2013-03-15
 if(isset($_GET["date"])) {
     $setDate = date_create_from_format("Y-m-d", $_GET["date"]);
 }
 
-$tomorrowDate = date('Y-m-d H:i:s.u',strtotime('+1 day',strtotime($setDate->format("Y-m-d H:i:s.u"))));
+$tomorrowDate = date('Y-m-d H:i:s.u',strtotime('+1 day', strtotime($setDate->format("Y-m-d H:i:s.u"))));
 $tomorrowDate = date_create_from_format("Y-m-d H:i:s.u", $tomorrowDate);
 
-$yesterdayDate = date('Y-m-d H:i:s.u',strtotime('-1 day',strtotime($setDate->format("Y-m-d H:i:s.u"))));
+$yesterdayDate = date('Y-m-d H:i:s.u',strtotime('-1 day', strtotime($setDate->format("Y-m-d H:i:s.u"))));
 $yesterdayDate = date_create_from_format("Y-m-d H:i:s.u", $yesterdayDate);
 
-$lines = gzfile('https://altitude-ce-aws.s3.eu-central-1.amazonaws.com/Pizza_Sheet/PB_Pizza_Delivery_List.csv');
+$bookings = [];
+$deliveries = [];
+$num = 1;
 
-$partyData = array();
-$pizzaSummary = array();
-
-$pizzaSummary["Total"] = array(
-    "partyStartTime" => "Total",
-    "PB Glutenfri Skinke" => 0,
-    "PB Glutenfri Kjottboller" => 0,
-    "PB Glutenfri Pepperoni" => 0,
-    "PB Glutenfri Margherita" => 0,
-    "PB Pizza Kjottboller" => 0,
-    "PB Pizza Margherita" => 0,
-    "PB Pizza Pepperoni" => 0,
-    "PB Pizza Skinke" => 0,
-    "[X] PB Meny" => 0,
-    "total" => 0
-);
-
+$lines = gzfile('https://altitude-ce-aws.s3.eu-central-1.amazonaws.com/Pizza_Sheet/PB_Pizza_Delivery_List_S3.csv');
 foreach ($lines as $line) {
     if(preg_match('/^"BKN.*$/i', $line) != 1) {
         continue;
@@ -39,14 +27,13 @@ foreach ($lines as $line) {
     if(empty(trim($line))) {
         continue;
     }
-    
-    list($partyId, $parentName, $partyStartTimeString, $partyEndDate, $partyEndTime, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode(",", $line);
 
-    $partyEndDate = str_replace("\"", "", $partyEndDate); 
+    list($partyId, $parentName, $partyStartTimeString, $partyDate, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode(";", $line);
+
+    $partyDate = explode(",", str_replace("\"", "", $partyDate))[0];
     $partyId = str_replace("\"", "", $partyId);
     $parentName = str_replace("\"", "", $parentName);
     $partyStartTimeString = str_replace("\"", "", $partyStartTimeString);
-    $partyEndTime = str_replace("\"", "", $partyEndTime);
     $foodDeliveryTimeString = str_replace("\"", "", $foodDeliveryTimeString);
     $pizzaType = str_replace("\"", "", $pizzaType);
     $numberOfPizzas = str_replace("−", "-", str_replace("\"", "", $numberOfPizzas));
@@ -56,74 +43,53 @@ foreach ($lines as $line) {
         continue;
     }
 
-    $partyStartTime = date_create_from_format("d.m.Y H:i", $partyEndDate . ' ' . $partyStartTimeString);
-    $foodDeliveryTime = date_create_from_format("d.m.Y H:i", $partyEndDate . ' ' . $foodDeliveryTimeString);
-
-    if($foodDeliveryTime->format("Y-m-d") == $setDate->format("Y-m-d")) {
-        $time = $foodDeliveryTime->format("H:i");
-        if(!array_key_exists($time, $pizzaSummary)) {
-            $pizzaSummary[$time] = array(
-                "partyStartTime" => $time,
-                "parentName" => $parentName,
-                "partyId" => $partyId,
-                "PB Glutenfri Skinke" => 0,
-                "PB Glutenfri Kjottboller" => 0,
-                "PB Glutenfri Pepperoni" => 0,
-                "PB Glutenfri Margherita" => 0,
-                "PB Pizza Kjottboller" => 0,
-                "PB Pizza Margherita" => 0,
-                "PB Pizza Pepperoni" => 0,
-                "PB Pizza Skinke" => 0,
-                "[X] PB Meny" => 0,
-                "notes" => $notes,
-                "total" => 0
-            );
-        }
-
-        $pizzaSummary[$time][$pizzaType] = $pizzaSummary[$time][$pizzaType] + intval($numberOfPizzas);
-        $pizzaSummary[$time]["total"] = $pizzaSummary[$time]["total"] + intval($numberOfPizzas);
-        $pizzaSummary["Total"][$pizzaType] = $pizzaSummary["Total"][$pizzaType] + intval($numberOfPizzas);
-        $pizzaSummary["Total"]["total"] = $pizzaSummary["Total"]["total"] + intval($numberOfPizzas);
-    }
+    $partyStartTime = date_create_from_format("d.m.Y H:i", $partyDate . ' ' . $partyStartTimeString);
 
     if($partyStartTime->format("Y-m-d") == $setDate->format("Y-m-d")) {
-        if(array_key_exists($partyId, $partyData)) {
-            $partyData[$partyId][$pizzaType] = $partyData[$partyId][$pizzaType] + intval($numberOfPizzas);
-            $partyData[$partyId]["total"] = $partyData[$partyId]["total"] + intval($numberOfPizzas);
-        }
-        else {
-            $partyData[$partyId] = array(
-                "partyStartTime" => $partyStartTime->format("H:i"),
-                "parentName" => $parentName,
-                "partyId" => $partyId,
-                "PB Glutenfri Skinke" => 0,
-                "PB Glutenfri Kjottboller" => 0,
-                "PB Glutenfri Pepperoni" => 0,
-                "PB Glutenfri Margherita" => 0,
-                "PB Pizza Kjottboller" => 0,
-                "PB Pizza Margherita" => 0,
-                "PB Pizza Pepperoni" => 0,
-                "PB Pizza Skinke" => 0,
-                "[X] PB Meny" => 0,
-                "notes" => $notes,
-                "total" => 0
+        $foodDeliveryTime = date_create_from_format("d.m.Y H:i", $partyDate . ' ' . $foodDeliveryTimeString);
+
+        $product = new Product(
+            $pizzaType,
+            getPizzaTitle($pizzaType, $pizzaTitleMappings),
+            intval($numberOfPizzas),
+            $notes
+        );
+
+        if(!array_key_exists($partyId, $bookings)) {
+            $bookings[$partyId] = new Booking(
+                $partyId,
+                $parentName,
+                $partyStartTime->format("H:i"),
+                $foodDeliveryTime->format("H:i"),
+                $setDate->format("Y-m-d")       
             );
-            $partyData[$partyId][$pizzaType] = $partyData[$partyId][$pizzaType] + intval($numberOfPizzas);
-            $partyData[$partyId]["total"] = $partyData[$partyId]["total"] + intval($numberOfPizzas);
         }
+
+        if(!array_key_exists($foodDeliveryTime->format("H:i"), $deliveries)) {
+            $deliveries[$foodDeliveryTime->format("H:i")] = new Delivery(
+                $num++,
+                $foodDeliveryTime->format("H:i")    
+            );
+        }
+
+        $deliveries[$foodDeliveryTime->format("H:i")]->addProduct($product);
+        $bookings[$partyId]->addProduct($product);
     }
 }
 
-function my_sort($a,$b)
+function booking_sort($a, $b)
 {
-    return strcmp($a["partyStartTime"], $b["partyStartTime"]);
+    return strcmp($a->getStartTime(), $b->getStartTime());
 }
 
-usort($partyData, "my_sort");
+function delivery_sort($a, $b)
+{
+    return strcmp($a->getFoodDeliveryTime(), $b->getFoodDeliveryTime());
+}
 
-$totals = array_shift($pizzaSummary);
-array_push($pizzaSummary, $totals);
-usort($pizzaSummary, "my_sort");
+
+usort($bookings, "booking_sort");
+usort($deliveries, "delivery_sort");
 
 ?>
 <!DOCTYPE html>
@@ -202,21 +168,22 @@ usort($pizzaSummary, "my_sort");
                         </thead>
                         <tbody>
                             <?php
-                                foreach($partyData as $partyId => $party) {
-                                    echo "<tr class=\"text-center\"><th scope=\"row\">" . $party["partyStartTime"] . "</th>";
-                                    echo "<td>" . $party["partyId"] . "</td>";
-                                    echo "<td class=\"text-left\">" . $party["parentName"] . "</td>";
-                                    echo "<td>" . ($party["PB Pizza Skinke"] == 0 ? "-" : $party["PB Pizza Skinke"]) . "</td>";
-                                    echo "<td>" . ($party["PB Pizza Kjottboller"] == 0 ? "-" : $party["PB Pizza Kjottboller"]) . "</td>";
-                                    echo "<td>" . ($party["PB Pizza Pepperoni"] == 0 ? "-" : $party["PB Pizza Pepperoni"]) . "</td>";
-                                    echo "<td>" . ($party["PB Pizza Margherita"] == 0 ? "-" : $party["PB Pizza Margherita"]) . "</td>";
-                                    echo "<td>" . ($party["PB Glutenfri Skinke"] == 0 ? "-" : $party["PB Glutenfri Skinke"]) . "</td>";
-                                    echo "<td>" . ($party["PB Glutenfri Kjottboller"] == 0 ? "-" : $party["PB Glutenfri Kjottboller"]) . "</td>";
-                                    echo "<td>" . ($party["PB Glutenfri Pepperoni"] == 0 ? "-" : $party["PB Glutenfri Pepperoni"]) . "</td>";
-                                    echo "<td>" . ($party["PB Glutenfri Margherita"] == 0 ? "-" : $party["PB Glutenfri Margherita"]) . "</td>";
-                                    echo "<td>" . ($party["[X] PB Meny"] == 0 ? "-" : $party["[X] PB Meny"]) . "</td>";
-                                    echo "<td>" . ($party["total"] == 0 ? "-" : $party["total"]) . "</td>";
-                                    echo "<td>" . ($party["notes"] == null ? "-" : $party["notes"]) . "</td></tr>";
+                                foreach($bookings as $booking) {
+                                    echo "<tr class=\"text-center\">";
+                                    echo "<th scope=\"row\">" . $booking->getStartTime() . "</th>";
+                                    echo "<td>" . $booking->getId() . "</td>";
+                                    echo "<td class=\"text-left\">" . $booking->getParentName() . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Skinke (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Kjøttboller (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Pepperoni (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Margherita (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Skinke (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Kjøttboller (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Pepperoni (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Margherita (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizzabakerens meny (3-4 personer)")). "</td>";
+                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas(null)) . "</td>";
+                                    echo "<td>" . getValue($booking->getProductNote("Pizzabakerens meny (3-4 personer)")). "</td></tr>";
                                 }
                             ?>
                         </tbody>
@@ -255,26 +222,34 @@ usort($pizzaSummary, "my_sort");
                         <tbody>
                             <?php
                                 $num = 1;
-                                foreach($pizzaSummary as $time => $pizzas) {
-                                    if($pizzas["total"] == 0 && $time != "Total") {
-                                        continue;
-                                    }
-                                    $index = "<td></td>";
-                                    if($pizzas["partyStartTime"] != "Total") {
-                                        $index = "<td>" . $num++ . "</td>";
-                                    }
-                                    echo "<tr class=\"text-center\">" . $index . "<th scope=\"row\">" . $pizzas["partyStartTime"] . "</th>";
-                                    echo "<td>" . ($pizzas["PB Pizza Skinke"] == 0 ? "-" : $pizzas["PB Pizza Skinke"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Pizza Kjottboller"] == 0 ? "-" : $pizzas["PB Pizza Kjottboller"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Pizza Pepperoni"] == 0 ? "-" : $pizzas["PB Pizza Pepperoni"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Pizza Margherita"] == 0 ? "-" : $pizzas["PB Pizza Margherita"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Glutenfri Skinke"] == 0 ? "-" : $pizzas["PB Glutenfri Skinke"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Glutenfri Kjottboller"] == 0 ? "-" : $pizzas["PB Glutenfri Kjottboller"]) . "</td>";
-                                    echo "<td>" . ($pizzas["PB Glutenfri Pepperoni"] == 0 ? "-" : $pizzas["PB Glutenfri Pepperoni"]) ."</td>";
-                                    echo "<td>" . ($pizzas["PB Glutenfri Margherita"] == 0 ? "-" : $pizzas["PB Glutenfri Margherita"]) . "</td>";
-                                    echo "<td>" . ($pizzas["[X] PB Meny"] == 0 ? "-" : $pizzas["[X] PB Meny"]) . "</td>";
-                                    echo "<td>" . ($pizzas["total"] == 0 ? "-" : $pizzas["total"]) . "</td></tr>";
+                                foreach($deliveries as $delivery) {
+                                    echo "<tr class=\"text-center\">";
+                                    echo "<td>" . $delivery->getId() . "</td>";
+                                    echo "<th scope=\"row\">" . $delivery->getFoodDeliveryTime() . "</th>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Skinke (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Kjøttboller (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Pepperoni (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Margherita (3-4 personer)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Skinke (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Kjøttboller (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Pepperoni (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Margherita (1 person)")) . "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizzabakerens meny (3-4 personer)")). "</td>";
+                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas(null)) . "</td></tr>";
                                 }
+                                echo "<tr class=\"text-center\">";
+                                echo "<td></td>";
+                                echo "<th>Total</th>";
+                                echo "<td>" . getValue(getDeliveryTotals("Pizza Skinke (3-4 personer)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Pizza Kjøttboller (3-4 personer)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Pizza Pepperoni (3-4 personer)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Pizza Margherita (3-4 personer)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Skinke (1 person)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Kjøttboller (1 person)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Pepperoni (1 person)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Margherita (1 person)", $deliveries)) . "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals("Pizzabakerens meny (3-4 personer)", $deliveries)). "</td>";
+                                echo "<td>" . getValue(getDeliveryTotals(null, $deliveries)) . "</td></tr>";
                             ?>
                         </tbody>
                     </table>
