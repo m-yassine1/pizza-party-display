@@ -74,7 +74,7 @@ class Delivery {
 			$this->products[$product->getName()] = $product; 
 		} else {
 			$total = $this->products[$product->getName()]->getQuantity() + $product->getQuantity();
-			$this->products[$product->getName()].setQuantity($total) ;
+			$this->products[$product->getName()]->setQuantity($total) ;
 		}
 	}
 
