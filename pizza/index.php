@@ -1,5 +1,5 @@
 <?php
-require_once("../models.php");
+require_once("../scripts/models.php");
 
 $bookings = [];
 $deliveries = [];
@@ -91,10 +91,10 @@ usort($deliveries, "delivery_sort");
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <title>Pizza Orders</title>
-        <link rel="shortcut icon" type="image/png" href="altitude.png"/>
+        <link rel="shortcut icon" type="image/png" href="../img/altitude.png"/>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
-        <link rel="stylesheet" href="../bootstrap-datetimepicker.min.css">
+        <link rel="stylesheet" href="../css/bootstrap-datetimepicker.min.css">
         <script src="https://kit.fontawesome.com/a6bde2c958.js" crossorigin="anonymous"></script>
         <style>
             @page {
@@ -120,7 +120,7 @@ usort($deliveries, "delivery_sort");
         <div class="container-fluid">
             <div class="row align-items-center justify-content-between">
                 <div class="col-lg-2">
-                    <img src="../altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
+                    <img src="../img/altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
                 </div>
                 <div class="col-lg-4">
                     <form class="form-row align-items-end d-print-none">
@@ -184,7 +184,7 @@ usort($deliveries, "delivery_sort");
             <hr style="color: black" class="d-print-none" />
             <div class="row align-items-center justify-content-between" style="page-break-before:always">
                 <div class="col-lg-2">
-                    <img src="../altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
+                    <img src="../img/altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
                 </div>
             </div>
             <div class="row page">
@@ -255,7 +255,7 @@ usort($deliveries, "delivery_sort");
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>      
-        <script src="../bootstrap-datetimepicker.min.js"></script>
+        <script src="../js/bootstrap-datetimepicker.min.js"></script>
         <script type="text/javascript">
             $(function() {
                 $('#datetimepicker1').datetimepicker({
