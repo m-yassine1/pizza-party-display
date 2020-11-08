@@ -1,36 +1,19 @@
 <?php
-require "models.php";
-
-$setDate = date_create();
-
-//Date format should be 2013-03-15
-if(isset($_GET["date"])) {
-    $setDate = date_create_from_format("Y-m-d", $_GET["date"]);
-}
-
-$tomorrowDate = date('Y-m-d H:i:s.u',strtotime('+1 day', strtotime($setDate->format("Y-m-d H:i:s.u"))));
-$tomorrowDate = date_create_from_format("Y-m-d H:i:s.u", $tomorrowDate);
-
-$yesterdayDate = date('Y-m-d H:i:s.u',strtotime('-1 day', strtotime($setDate->format("Y-m-d H:i:s.u"))));
-$yesterdayDate = date_create_from_format("Y-m-d H:i:s.u", $yesterdayDate);
+require_once("../models.php");
 
 $bookings = [];
 $deliveries = [];
 $num = 1;
 
-$lines = gzfile('https://altitude-ce-aws.s3.eu-central-1.amazonaws.com/Pizza_Sheet/PB_Pizza_Delivery_List_S3.csv');
+$lines = file('https://altitude-ce-aws.s3.eu-central-1.amazonaws.com/Pizza_Sheet/PB_Pizza_Delivery_List_S3.csv');
 foreach ($lines as $line) {
-    if(preg_match('/^"BKN.*$/i', $line) != 1) {
+    if(!isLine($line)) {
         continue;
     }
 
-    if(empty(trim($line))) {
-        continue;
-    }
+    list($partyId, $parentName, $partyStartTimeString, $partyDate, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode("\";\"", $line);
 
-    list($partyId, $parentName, $partyStartTimeString, $partyDate, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode(";", $line);
-
-    $partyDate = explode(",", str_replace("\"", "", $partyDate))[0];
+    $partyDate = str_replace("\"", "", $partyDate);
     $partyId = str_replace("\"", "", $partyId);
     $parentName = str_replace("\"", "", $parentName);
     $partyStartTimeString = str_replace("\"", "", $partyStartTimeString);
@@ -44,13 +27,11 @@ foreach ($lines as $line) {
     }
 
     $partyStartTime = date_create_from_format("d.m.Y H:i", $partyDate . ' ' . $partyStartTimeString);
-
     if($partyStartTime->format("Y-m-d") == $setDate->format("Y-m-d")) {
         $foodDeliveryTime = date_create_from_format("d.m.Y H:i", $partyDate . ' ' . $foodDeliveryTimeString);
 
         $product = new Product(
             $pizzaType,
-            getPizzaTitle($pizzaType, $pizzaTitleMappings),
             intval($numberOfPizzas),
             $notes
         );
@@ -61,7 +42,18 @@ foreach ($lines as $line) {
                 $parentName,
                 $partyStartTime->format("H:i"),
                 $foodDeliveryTime->format("H:i"),
-                $setDate->format("Y-m-d")       
+                $setDate->format("Y-m-d"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
             );
         }
 
@@ -102,7 +94,7 @@ usort($deliveries, "delivery_sort");
         <link rel="shortcut icon" type="image/png" href="altitude.png"/>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
-        <link rel="stylesheet" href="bootstrap-datetimepicker.min.css">
+        <link rel="stylesheet" href="../bootstrap-datetimepicker.min.css">
         <script src="https://kit.fontawesome.com/a6bde2c958.js" crossorigin="anonymous"></script>
         <style>
             @page {
@@ -128,7 +120,7 @@ usort($deliveries, "delivery_sort");
         <div class="container-fluid">
             <div class="row align-items-center justify-content-between">
                 <div class="col-lg-2">
-                    <img src="altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
+                    <img src="../altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
                 </div>
                 <div class="col-lg-4">
                     <form class="form-row align-items-end d-print-none">
@@ -150,7 +142,7 @@ usort($deliveries, "delivery_sort");
                     <table class="table table-striped table-bordered table-hover table-sm">
                         <thead>
                             <tr class="text-center">
-                                <th>Start Tid</th>
+                                <th scope="col">Start Tid</th>
                                 <th scope="col">Party ID</th>
                                 <th scope="col">Party Name</th>
                                 <th scope="col">Skinke</th>
@@ -167,25 +159,23 @@ usort($deliveries, "delivery_sort");
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
-                                foreach($bookings as $booking) {
-                                    echo "<tr class=\"text-center\">";
-                                    echo "<th scope=\"row\">" . $booking->getStartTime() . "</th>";
-                                    echo "<td>" . $booking->getId() . "</td>";
-                                    echo "<td class=\"text-left\">" . $booking->getParentName() . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Skinke (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Kjøttboller (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Pepperoni (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizza Margherita (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Skinke (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Kjøttboller (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Pepperoni (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Margherita (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas("Pizzabakerens meny (3-4 personer)")). "</td>";
-                                    echo "<td>" . getValue($booking->getTotalNumberOfPizzas(null)) . "</td>";
-                                    echo "<td>" . getValue($booking->getProductNote("Pizzabakerens meny (3-4 personer)")). "</td></tr>";
-                                }
-                            ?>
+                            <?php foreach($bookings as $booking): ?> 
+                                    <tr class="text-center">
+                                    <th scope="row"><?php echo $booking->getStartTime(); ?></th>
+                                    <td><?php echo $booking->getId(); ?></td>
+                                    <td class="text-left"><?php echo  $booking->getParentName(); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Pizza Skinke (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Pizza Kjøttboller (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Pizza Pepperoni (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Pizza Margherita (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Skinke (1 person)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Kjøttboller (1 person)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Pepperoni (1 person)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Glutenfri Pizza Margherita (1 person)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas("Pizzabakerens meny (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($booking->getTotalNumberOfPizzas(null)); ?></td>
+                                    <td><?php echo getValue($booking->getProductNote("Pizzabakerens meny (3-4 personer)")); ?></td></tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                   </div>
@@ -194,7 +184,7 @@ usort($deliveries, "delivery_sort");
             <hr style="color: black" class="d-print-none" />
             <div class="row align-items-center justify-content-between" style="page-break-before:always">
                 <div class="col-lg-2">
-                    <img src="altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
+                    <img src="../altitude.png" class="img-fluid rounded mx-auto d-block" width="150px" alt="Altitude Norway">
                 </div>
             </div>
             <div class="row page">
@@ -220,57 +210,57 @@ usort($deliveries, "delivery_sort");
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
-                                $num = 1;
-                                foreach($deliveries as $delivery) {
-                                    echo "<tr class=\"text-center\">";
-                                    echo "<td>" . $delivery->getId() . "</td>";
-                                    echo "<th scope=\"row\">" . $delivery->getFoodDeliveryTime() . "</th>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Skinke (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Kjøttboller (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Pepperoni (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizza Margherita (3-4 personer)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Skinke (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Kjøttboller (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Pepperoni (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Margherita (1 person)")) . "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas("Pizzabakerens meny (3-4 personer)")). "</td>";
-                                    echo "<td>" . getValue($delivery->getTotalNumberOfPizzas(null)) . "</td></tr>";
-                                }
-                                echo "<tr class=\"text-center\">";
-                                echo "<td></td>";
-                                echo "<th>Total</th>";
-                                echo "<td>" . getValue(getDeliveryTotals("Pizza Skinke (3-4 personer)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Pizza Kjøttboller (3-4 personer)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Pizza Pepperoni (3-4 personer)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Pizza Margherita (3-4 personer)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Skinke (1 person)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Kjøttboller (1 person)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Pepperoni (1 person)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Glutenfri Pizza Margherita (1 person)", $deliveries)) . "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals("Pizzabakerens meny (3-4 personer)", $deliveries)). "</td>";
-                                echo "<td>" . getValue(getDeliveryTotals(null, $deliveries)) . "</td></tr>";
-                            ?>
+                            <?php foreach($deliveries as $delivery): ?> 
+                                <tr class="text-center">
+                                    <td><?php echo $delivery->getId(); ?></td>
+                                    <th scope="row"><?php echo $delivery->getFoodDeliveryTime(); ?></th>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Pizza Skinke (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Pizza Kjøttboller (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Pizza Pepperoni (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Pizza Margherita (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Skinke (1 person)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Kjøttboller (1 person)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Pepperoni (1 person)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Glutenfri Pizza Margherita (1 person)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas("Pizzabakerens meny (3-4 personer)")); ?></td>
+                                    <td><?php echo getValue($delivery->getTotalNumberOfPizzas(null)); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <tr class="text-center">
+                                <td></td>
+                                <th>Total</th>
+                                <td><?php echo getValue(getDeliveryTotals("Pizza Skinke (3-4 personer)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Pizza Kjøttboller (3-4 personer)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Pizza Pepperoni (3-4 personer)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Pizza Margherita (3-4 personer)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Glutenfri Pizza Skinke (1 person)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Glutenfri Pizza Kjøttboller (1 person)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Glutenfri Pizza Pepperoni (1 person)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Glutenfri Pizza Margherita (1 person)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals("Pizzabakerens meny (3-4 personer)", $deliveries)); ?></td>
+                                <td><?php echo getValue(getDeliveryTotals(null, $deliveries)); ?></td>
+                            </tr>
                         </tbody>
                     </table>
                   </div>
                 </div>
             </div>
             <footer class="row">
-                <div class="col-sm-4 text-left">COPYRIGHT © 2019 ALTITUDE ASKER - ALL RIGHTS RESERVED</div>
-                <div class="col-sm-4 text-center">Tel: 66 98 22 00</div>
-                <div class="col-sm-4 text-right">email: info@altitude.no</div>
+                <div class="col-sm-6 text-left">COPYRIGHT &#169; <?php echo date("Y"); ?> ALTITUDE ASKER - ALL RIGHTS RESERVED</div>
+                <div class="col-sm-3 text-center">Tel: 66 98 22 00</div>
+                <div class="col-sm-3 text-right">email: info@altitude.no</div>
             </footer>
         </div>
 
-        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.5.3/umd/popper.min.js" integrity="sha512-53CQcu9ciJDlqhK7UD8dZZ+TF2PFGZrOngEYM/8qucuQba+a+BXOIRsp9PoMNJI3ZeLMVNIxIfZLbG/CdHI5PA==" crossorigin="anonymous"></script>        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>        <script src="bootstrap-datetimepicker.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>      
+        <script src="../bootstrap-datetimepicker.min.js"></script>
         <script type="text/javascript">
             $(function() {
                 $('#datetimepicker1').datetimepicker({
                     'format': 'YYYY-MM-DD',
-                    'date': new Date(<?php echo "\"" . $setDate->format("Y-m-d") . "\""; ?>)
+                    'date': new Date("<?php echo $setDate->format("Y-m-d"); ?>")
                 });
                 $("#datetimepicker1").on("dp.change", function (e) {
                     var date = e.date.toDate();

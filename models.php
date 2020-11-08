@@ -1,5 +1,30 @@
 <?php
 
+$setDate = date_create();
+
+//Date format should be 2013-03-15
+if(isset($_GET["date"])) {
+    $setDate = date_create_from_format("Y-m-d", $_GET["date"]);
+}
+
+$tomorrowDate = date('Y-m-d H:i:s.u',strtotime('+1 day', strtotime($setDate->format("Y-m-d H:i:s.u"))));
+$tomorrowDate = date_create_from_format("Y-m-d H:i:s.u", $tomorrowDate);
+
+$yesterdayDate = date('Y-m-d H:i:s.u',strtotime('-1 day', strtotime($setDate->format("Y-m-d H:i:s.u"))));
+$yesterdayDate = date_create_from_format("Y-m-d H:i:s.u", $yesterdayDate);
+
+function endsWith( $haystack, $needle ) {
+    $length = strlen( $needle );
+    if( !$length ) {
+        return true;
+    }
+    return substr( $haystack, -$length ) === $needle;
+}
+
+function isLine($line) {
+	return preg_match('/^"BKN.*$/i', $line) == 1;
+}
+
 function getValue($quantity) {
 	return $quantity == null || $quantity == 0 ? "-" : $quantity;
 }
@@ -20,22 +45,6 @@ function getDeliveryTotals($productName, $deliveries) {
 		}
 	}
 	return $total;
-}
-
-$pizzaTitleMappings = [
-	"Pizza Skinke (3-4 personer)" => "Skinke",
-	"Pizza Pepperoni (3-4 personer)" => "Pepperoni",
-	"Pizza Kjøttboller (3-4 personer)" => "Kjøttboller",
-	"Pizza Margherita (3-4 personer)" => "Margherita",
-	"Glutenfri Pizza Pepperoni (1 person)" => "GF Pepperoni",
-	"Glutenfri Pizza Skinke (1 person)" => "GF Skinke",
-	"Glutenfri Pizza Kjøttboller (1 person)" => "GF Kjøttboller",
-	"Glutenfri Pizza Margherita (1 person)" => "GF Margherita",
-	"Pizzabakerens meny (3-4 personer)" => "PB Meny"
-];
-
-function getPizzaTitle($productName, $pizzaTitleMappings) {
-	return array_key_exists($productName, $pizzaTitleMappings) ? $pizzaTitleMappings[$productName] :  null;
 }
 
 class Delivery {
@@ -95,15 +104,13 @@ class Delivery {
 
 class Product {
 	private $name;
-	private $title;
 	private $quantity;
 	private $note;
 
-	function __construct($name, $title, $quantity, $note) {
+	function __construct($name, $quantity, $note) {
 		$this->name = $name;
 		$this->quantity = $quantity == null ? 0 : $quantity;
 		$this->note = $note;
-		$this->title = $title == null ? $name : $title;
 	}
 
 	function getName() {
@@ -118,20 +125,12 @@ class Product {
 		return $this->note;
 	}
 
-	function getTitle() {
-		return $this->title;
-	}
-
-	function setTitle($title) {
-		$this->name = $title == null ? $name : $title;
-	}
-
 	function setName($name) {
 		$this->name = $name;
 	}
 
 	function setQuantity($quantity) {
-		$this->quantity = $quantity == null ? 0 : $quantity < 0 ? 0 : $quantity;
+		$this->quantity = $quantity == null ? 0 : $quantity;
 	}
 
 	function setNote($note) {
@@ -147,14 +146,50 @@ class Booking
 	private $foodDeliveryTime;
 	private $date;
 	private $products;
+	private $birthdayName;
+	private $endTime;
+	private $partyHost;
+	private $numberOfPeople;
+	private $bookingNote;
+	private $note;
+	private $dietaryNote;
+	private $roomTotalTime;
+	private $roomStartTime;
+	private $roomName;
 
-	function __construct($id, $parentName, $startTime, $foodDeliveryTime, $date) {
+
+	function __construct($id, 
+		$parentName, 
+		$startTime, 
+		$foodDeliveryTime, 
+		$date,
+		$birthdayName,
+		$endTime,
+		$partyHost,
+		$numberOfPeople,
+		$bookingNote,
+		$note,
+		$dietaryNote,
+		$roomTotalTime,
+		$roomStartTime,
+		$roomName)
+	{
 		$this->id = $id;
 		$this->parentName = $parentName;
 		$this->startTime = $startTime;
 		$this->foodDeliveryTime = $foodDeliveryTime;
+		$this->birthdayName = $birthdayName;
 		$this->date = $date;
 		$this->products = [];
+		$this->endTime = $endTime;
+		$this->partyHost = $partyHost;
+		$this->numberOfPeople = $numberOfPeople;
+		$this->bookingNote = $bookingNote;
+		$this->note = $note;
+		$this->dietaryNote = $dietaryNote;
+		$this->roomTotalTime = $roomTotalTime;
+		$this->roomStartTime = $roomStartTime;
+		$this->roomName = $roomName;
 	}
 
 	function getId() {
@@ -181,6 +216,42 @@ class Booking
 		return $this->products;
 	}
 
+	function getBirthdayName() {
+		return $this->birthdayName;
+	}
+
+	function getEndTime() {
+		return $this->endTime;
+	}
+
+	function getPartyHost() {
+		return $this->partyHost;
+	}
+
+	function getBookingNote() {
+		return $this->bookingNote;
+	}
+
+	function getNote() {
+		return $this->note;
+	}
+
+	function getDietaryNote() {
+		return $this->dietaryNote;
+	}
+
+	function getRoomTotalTime() {
+		return $this->roomTotalTime;
+	}
+
+	function getRoomStarTime() {
+		return $this->roomStartTime;
+	}
+
+	function getRoomName() {
+		return $this->roomName;
+	}
+
 	function setId($id) {
 		$this->id = $id;
 	}
@@ -199,6 +270,42 @@ class Booking
 
 	function setDate($date) {
 		$this->date = $date;
+	}
+
+	function setEndTime($endTime) {
+		$this->endTime = $endTime;
+	}
+
+	function setPartyHost($partyHost) {
+		$this->partyHost = $partyHost;
+	}
+
+	function setNumberOfPeople($numberOfPeople) {
+		$this->numberOfPeople = $numberOfPeople;
+	}
+
+	function setBookingNote($bookingNote) {
+		$this->bookingNote = $bookingNote;
+	}
+
+	function setNote($note) {
+		$this->note = $note;
+	}
+
+	function setDietaryNote($dietaryNote) {
+		$this->dietaryNote = $dietaryNote;
+	}
+
+	function setRoomTotalTime($roomTotalTime) {
+		$this->roomTotalTime = $roomTotalTime;
+	}
+
+	function setRoomStartTime($roomStartTime) {
+		$this->roomStartTime = $roomStartTime;
+	}
+
+	function setRoomName($roomName) {
+		$this->roomName = $roomName;
 	}
 
 	function getProductNote($productName) {
