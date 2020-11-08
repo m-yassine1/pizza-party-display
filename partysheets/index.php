@@ -1,4 +1,5 @@
 <?php
+require_once("../scripts/functions.php");
 require_once("../scripts/models.php");
 
 $bookings = [];
