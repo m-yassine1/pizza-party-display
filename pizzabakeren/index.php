@@ -12,7 +12,7 @@ foreach ($lines as $line) {
         continue;
     }
 
-    list($partyId, $parentName, $partyStartTimeString, $partyDate, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode("\";\"", $line);
+    list($partyId, $parentName, $partyStartTimeString, $partyDate, $foodDeliveryTimeString, $pizzaType, $numberOfPizzas, $notes) = explode("\",\"", $line);
 
     $partyDate = str_replace("\"", "", $partyDate);
     $partyId = str_replace("\"", "", $partyId);

@@ -194,10 +194,12 @@ usort($bookings, "booking_sort");
                     </thead>
                     <tbody>
                         <?php foreach($booking->getProducts() as $product): ?>
+                            <?php if ($product->getQuantity() > 0): ?>
                             <tr class="text-center">
                                 <th scope="row" class="text-left"><?php echo $product->getName(); ?></th>
                                 <td><?php echo getValue($product->getQuantity()); ?></td>
                             </tr>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
